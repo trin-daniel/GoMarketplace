@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 
-import { View, Image } from 'react-native';
+import { View } from 'react-native';
 
 import formatValue from '../../utils/formatValue';
 import { useCart } from '../../hooks/cart';
@@ -28,6 +28,13 @@ interface Product {
   price: number;
 }
 
+interface Item {
+  title: string;
+  price: number;
+  image_url: string;
+  quantity: number;
+}
+
 const Dashboard: React.FC = () => {
   const { addToCart } = useCart();
 
@@ -35,14 +42,17 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadProducts(): Promise<void> {
-      // TODO
+      const response = await api.get<Product[]>('products');
+      setProducts([...response.data]);
     }
 
     loadProducts();
   }, []);
 
   function handleAddToCart(item: Product): void {
-    // TODO
+    const { ...rest } = item;
+    const newProduct = { ...rest, quantity: 1 };
+    addToCart(newProduct);
   }
 
   return (
