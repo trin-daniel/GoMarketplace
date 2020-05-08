@@ -28,13 +28,6 @@ interface Product {
   price: number;
 }
 
-interface Item {
-  title: string;
-  price: number;
-  image_url: string;
-  quantity: number;
-}
-
 const Dashboard: React.FC = () => {
   const { addToCart } = useCart();
 

@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 
 import AsyncStorage from '@react-native-community/async-storage';
+import { Alert } from 'react-native';
 
 interface Product {
   id: string;
@@ -30,12 +31,14 @@ const CartProvider: React.FC = ({ children }) => {
 
   useEffect(() => {
     async function loadProducts(): Promise<void> {
-      const response = await AsyncStorage.getItem('@gomarketplace:2');
-      if (response) {
-        const toConvert = JSON.parse(response);
-        setProducts([...toConvert]);
+      const response = await AsyncStorage.getItem('@gomarketplace');
+      if (!response) {
+        Alert.alert('Error founded', 'Not exist items in cart');
+      } else {
+        const parser = JSON.parse(response);
+        console.log(parser);
+        setProducts([...parser]);
       }
-      console.log(response);
     }
 
     loadProducts();
@@ -44,55 +47,69 @@ const CartProvider: React.FC = ({ children }) => {
   useEffect(() => {
     async function save(): Promise<void> {
       await AsyncStorage.setItem(
-        '@gomarketplace:2',
+        '@gomarketplace',
         JSON.stringify([...products]),
       );
     }
     save();
   }, [products]);
 
+  const addToCart = useCallback(
+    async (product: Product) => {
+      const { ...rest } = product;
+      const findProductById = products.findIndex(item => item.id === rest.id);
+      const dataProduct = { ...rest };
+      if (findProductById === -1) {
+        setProducts([...products, dataProduct]);
+      } else {
+        const updateProduct = [...products];
+        updateProduct[findProductById] = {
+          ...updateProduct[findProductById],
+          quantity: updateProduct[findProductById].quantity + 1,
+        };
+        setProducts([...updateProduct]);
+      }
+    },
+    [products],
+  );
+
   const increment = useCallback(
-    async id => {
-      const data = products.findIndex(item => item.id === id);
-      if (data === -1) {
+    async (id: string) => {
+      const findById = products.findIndex(item => item.id === id);
+      if (findById === -1) {
         return;
       }
-      const newProduct = [...products];
-      newProduct[data] = {
-        ...newProduct[data],
-        quantity: newProduct[data].quantity + 1,
+      const el = [...products];
+      el[findById] = {
+        ...el[findById],
+        quantity: el[findById].quantity + 1,
       };
-      setProducts([...newProduct]);
+      setProducts([...el]);
+      // await AsyncStorage.setItem('@gomarketplace', JSON.stringify(el));
     },
     [products],
   );
 
   const decrement = useCallback(
     async id => {
-      const data = products.findIndex(item => item.id === id);
-      if (data === -1) {
+      const findById = products.findIndex(item => item.id === id);
+      if (findById === -1) {
         return;
       }
-      const newProduct = [...products];
-      newProduct[data] = {
-        ...newProduct[data],
-        quantity: newProduct[data].quantity - 1,
+      const el = [...products];
+      if (el[findById].quantity === 0)
+        return Alert.alert(
+          'Operation is not permited',
+          'not exist quantity less than zero',
+        );
+      el[findById] = {
+        ...el[findById],
+        quantity: el[findById].quantity - 1,
       };
-      setProducts([...newProduct]);
+      setProducts([...el]);
+      // await AsyncStorage.setItem('@gomarketplace', JSON.stringify(el));
     },
     [products],
-  );
-  const addToCart = useCallback(
-    async (product: Product) => {
-      const { ...rest } = product;
-      const data = products.find(item => item.id === rest.id);
-      setProducts([...products, { ...rest }]);
-      if (data) {
-        await increment(data.id);
-        return;
-      }
-    },
-    [increment, products],
   );
 
   const value = React.useMemo(
